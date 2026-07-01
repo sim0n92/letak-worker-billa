@@ -79,7 +79,7 @@
   },
 
   "execution": {
-    "timeout": 120,
+    "timeout": 180,
     "memoryLimit": "256Mi",
     "cpuLimit": "0.5"
   }

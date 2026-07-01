@@ -20,6 +20,7 @@ import urllib.parse
 import urllib.request
 
 DEFAULT_URL = "https://www.billa.sk/letaky-a-akcie"
+DEFAULT_TIMEOUT = 15  # seconds per request; keeps N detail fetches within manifest execution.timeout
 
 _USER_AGENT = "Mozilla/5.0 (compatible; letak-worker-billa/1.0; +https://github.com/sim0n92/letak-worker-billa)"
 
@@ -38,10 +39,10 @@ _PDF_RE = re.compile(
 )
 
 
-def fetch(url: str) -> str:
+def fetch(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     """Fetch a page and return its HTML as text. Not pure - performs I/O."""
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 
