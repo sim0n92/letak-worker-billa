@@ -1,0 +1,86 @@
+{
+  "$schema": "https://example.com/process-class-manifest-v1.schema.json",
+  "specVersion": "1.0",
+  "type": "stdin",
+  "name": "letak-worker-billa",
+  "version": "1.0.0",
+  "description": "Detects new leaflets on the BILLA Slovakia leaflet page and returns their metadata + URLs (no downloads).",
+  "author": "sim0n92",
+  "repository": "https://github.com/sim0n92/letak-worker-billa",
+  "authentication": false,
+
+  "actions": {
+    "execute": {
+      "description": "Fetch billa.sk leaflet page, parse leaflets, and return the ones not present in knownLeaflets.",
+      "input": {
+        "type": "object",
+        "required": ["outputPath"],
+        "properties": {
+          "outputPath": {
+            "type": "string",
+            "description": "Absolute path where the result JSON document must be written."
+          },
+          "knownLeaflets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": [],
+            "description": "Leaflet keys (type|validFrom|validTo) already known to the caller."
+          },
+          "types": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": [],
+            "description": "Case-insensitive leaflet type filter. Empty means all types."
+          },
+          "pageUrl": {
+            "type": "string",
+            "default": "https://www.billa.sk/letaky-a-akcie",
+            "description": "Override for the leaflet listing page URL."
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "outputPath": { "type": "string" },
+          "count": { "type": "integer" },
+          "hasNew": { "type": "boolean" },
+          "leaflets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "from": { "type": "string", "format": "date" },
+                "to": { "type": "string", "format": "date" },
+                "url": { "type": "string", "format": "uri" }
+              }
+            }
+          },
+          "fileSize": { "type": "integer" }
+        }
+      }
+    },
+    "terminate": {
+      "description": "Stop an in-progress fetch/parse and exit cleanly.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "originalExecutionId": { "type": "string" }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "cleaned": { "type": "boolean" }
+        }
+      }
+    }
+  },
+
+  "execution": {
+    "timeout": 120,
+    "memoryLimit": "256Mi",
+    "cpuLimit": "0.5"
+  }
+}
