@@ -66,6 +66,13 @@ class ParsePdfUrlTests(unittest.TestCase):
         self.assertTrue(pdf_url.startswith("https://letak.billa.sk/"))
         self.assertIn(".pdf", pdf_url)
 
+    def test_extracts_publitas_pdf_link_with_attributes_before_href(self):
+        # 2026-10: the PDF moved to view.publitas.com and the <a> carries style/class before href
+        pdf_url = billa.parse_pdf_url(_read_fixture("billa_detail_publitas.html"))
+        self.assertIsNotNone(pdf_url)
+        self.assertTrue(pdf_url.startswith("https://view.publitas.com/"))
+        self.assertIn(".pdf", pdf_url)
+
     def test_returns_none_when_no_pdf_link_present(self):
         self.assertIsNone(billa.parse_pdf_url("<html><body>no pdf here</body></html>"))
 

@@ -3,7 +3,7 @@
   "specVersion": "1.0",
   "type": "stdin",
   "name": "letak-worker-billa",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Detects new leaflets on the BILLA Slovakia leaflet page and returns their metadata + URLs (no downloads).",
   "author": "sim0n92",
   "repository": "https://github.com/sim0n92/letak-worker-billa",
