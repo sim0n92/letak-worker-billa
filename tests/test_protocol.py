@@ -123,6 +123,34 @@ class HappyPathTests(unittest.TestCase):
         self.assertEqual(written["count"], 1)
 
 
+class SilentFailureTests(unittest.TestCase):
+    """A changed site layout must surface as an error, never as "Completed, 0 leaflets"."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def _run_with(self, listing, detail):
+        (self.tmp / "listing.html").write_text(listing, encoding="utf-8")
+        (self.tmp / "detail.html").write_text(detail, encoding="utf-8")
+        return _run({"_action": "execute", "outputPath": str(self.tmp / "r.json"),
+                     "pageUrl": (self.tmp / "listing.html").as_uri(), "_meta": {}},
+                    env_extra={"LOG_DIR": str(self.tmp / "logs")})
+
+    def test_listing_without_leaflets_is_an_error(self):
+        proc = self._run_with("<html><body>redesigned page</body></html>", DETAIL_HTML)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual(_stdout_lines(proc)[-1]["code"], "NO_LEAFLETS")
+
+    def test_leaflet_without_pdf_link_is_an_error(self):
+        proc = self._run_with(LISTING_HTML, "<html><body>no download button</body></html>")
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual(_stdout_lines(proc)[-1]["code"], "PDF_NOT_FOUND")
+
+
 class ErrorPathTests(unittest.TestCase):
     def test_missing_output_path_is_input_error(self):
         proc = _run({"_action": "execute", "_meta": {}})

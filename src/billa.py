@@ -34,8 +34,10 @@ _DATE_RANGE_RE = re.compile(
     r"od\s+\S+\s+(\d{1,2})\.\s*(\d{1,2})\.\s+do\s+\S+\s+(\d{1,2})\.\s*(\d{1,2})\.\s+(\d{4})"
 )
 
+# the "Stiahnuť PDF" button; any host (letak.billa.sk until 2026-10, view.publitas.com since) and any
+# attributes before the href (style/class)
 _PDF_RE = re.compile(
-    r'<a href="(?P<pdf>https://letak\.billa\.sk/[^"]+\.pdf[^"]*)"[^>]*aria-label="Stiahnu[^"]*PDF"'
+    r'<a\b[^>]*?\bhref="(?P<pdf>https://[^"]+?\.pdf[^"]*)"[^>]*aria-label="Stiahnu[^"]*PDF"'
 )
 
 

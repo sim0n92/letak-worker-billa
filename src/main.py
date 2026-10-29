@@ -184,6 +184,10 @@ class BillaWorker(ProcessClass):
 
         self.report(30, "Parsing leaflet list")
         stubs = billa.parse_leaflet_list(listing_html, base_url=url)
+        if not stubs:
+            # the listing always carries the current leaflet: none parsed = the page layout changed
+            raise ManagedError(f"No leaflets found on {url} - page layout changed?", code="NO_LEAFLETS",
+                               exit_code=EXIT_DEPENDENCY)
 
         self.report(50, f"Fetching {len(stubs)} detail page(s)")
         detail_html_by_url: dict[str, str] = {}
@@ -198,6 +202,13 @@ class BillaWorker(ProcessClass):
 
         self.report(70, "Parsing leaflets")
         leaflets = billa.parse_leaflets(listing_html, detail_html_by_url, base_url=url)
+        # a wanted leaflet without its PDF link = the detail page layout changed (2026-10: the PDF moved
+        # to view.publitas.com and nothing matched) - an error, not "0 new leaflets"
+        no_pdf = [lf["type"] for lf in leaflets
+                  if not lf.get("pdfUrl") and (lf["type"] or "").lower() in wanted]
+        if no_pdf or not any(lf.get("pdfUrl") for lf in leaflets):
+            raise ManagedError(f"No PDF link found for {no_pdf or 'any leaflet'} - detail page layout changed?",
+                               code="PDF_NOT_FOUND", exit_code=EXIT_DEPENDENCY)
         items = [
             {"type": lf["type"], "from": lf["validFrom"], "to": lf["validTo"], "url": lf["pdfUrl"]}
             for lf in leaflets
