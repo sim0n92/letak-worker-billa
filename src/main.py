@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import billa
+import v11
 
 EXIT_OK, EXIT_ERROR, EXIT_INPUT, EXIT_TIMEOUT, EXIT_DEPENDENCY = 0, 1, 2, 3, 4
 LOG_DIR = Path(os.environ.get("LOG_DIR", "/logs"))
@@ -133,6 +134,8 @@ class ProcessClass:
                 return self._handle_execute()
             if action == "terminate":
                 return self._handle_terminate()
+            if action in v11.ACTIONS:
+                return self._handle_v11(action)
             raise ManagedError(f"Unknown action: {action!r}", code="UNKNOWN_ACTION", exit_code=EXIT_INPUT)
         except ManagedError as e:
             self.logger.error("%s", e)
@@ -152,6 +155,25 @@ class ProcessClass:
         self._emit_result(data)
         return EXIT_OK
 
+    def _handle_v11(self, action):
+        """Proc-protocol v1.1 actions: errors carry the three protocol codes, not the legacy ones."""
+        try:
+            if action == "spec":
+                self._emit_result(v11.spec())
+                return EXIT_OK
+            self._start_terminate_watcher()
+            problem = v11.input_problem(self._input_data)
+            if problem:
+                raise ManagedError(problem, code="INVALID_INPUT", exit_code=EXIT_INPUT)
+            data = self.v11_check(self._input_data) if action == "check" else self.v11_run(self._input_data)
+            self._emit_result(data)
+            return EXIT_OK
+        except ManagedError as e:
+            code = v11.classify(e.code)
+            self.logger.error("%s (%s)", e, code)
+            self._emit_error(str(e), code, v11.error_data(code))
+            return e.exit_code
+
     def _handle_terminate(self):
         self.report(0, "Termination requested...")
         self._emit_result({"cleaned": self.terminate()})
@@ -166,12 +188,13 @@ class ProcessClass:
 
 
 class BillaWorker(ProcessClass):
-    def execute(self, input_data):
-        output_path = input_data.get("outputPath")
-        if not output_path:
-            raise ManagedError("Missing required input field: outputPath", code="INVALID_INPUT", exit_code=EXIT_INPUT)
+    def _scan(self, input_data):
+        """Fetches and parses the listing: all current leaflets {type, from, to, url}.
+
+        Raises ManagedError with the legacy codes (FETCH_FAILED, NO_LEAFLETS, PDF_NOT_FOUND, TERMINATED).
+        Shared by execute, check and run.
+        """
         url = input_data.get("pageUrl") or billa.DEFAULT_URL
-        known = set(input_data.get("knownLeaflets") or [])
         wanted = {str(t).lower() for t in (input_data.get("types") or [])}
 
         self.report(10, f"Fetching {url}")
@@ -214,6 +237,28 @@ class BillaWorker(ProcessClass):
             for lf in leaflets
             if lf.get("pdfUrl")
         ]
+        return items
+
+    def v11_check(self, input_data):
+        self._scan(input_data)
+        return {"ok": True}
+
+    def v11_run(self, input_data):
+        found = self._scan(input_data)
+        wanted = {str(t).lower() for t in (input_data.get("types") or [])}
+        state = dict(input_data.get("state") or {})
+        state["seen"] = list(state.get("seen") or []) + list(input_data.get("knownLeaflets") or [])
+        return v11.build_run_result(found, wanted, state, billa.leaflet_key)
+
+    def execute(self, input_data):
+        output_path = input_data.get("outputPath")
+        if not output_path:
+            raise ManagedError("Missing required input field: outputPath", code="INVALID_INPUT", exit_code=EXIT_INPUT)
+        url = input_data.get("pageUrl") or billa.DEFAULT_URL
+        known = set(input_data.get("knownLeaflets") or [])
+        wanted = {str(t).lower() for t in (input_data.get("types") or [])}
+
+        items = self._scan(input_data)
         matched = [
             it
             for it in items

@@ -1,20 +1,21 @@
 {
   "$schema": "https://example.com/process-class-manifest-v1.schema.json",
-  "specVersion": "1.0",
+  "specVersion": "1.1",
   "type": "stdin",
   "name": "letak-worker-billa",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Detects new leaflets on the BILLA Slovakia leaflet page and returns their metadata + URLs (no downloads).",
   "author": "sim0n92",
   "repository": "https://github.com/sim0n92/letak-worker-billa",
   "authentication": false,
-
   "actions": {
     "execute": {
       "description": "Fetch billa.sk leaflet page, parse leaflets, and return the ones not present in knownLeaflets.",
       "input": {
         "type": "object",
-        "required": ["outputPath"],
+        "required": [
+          "outputPath"
+        ],
         "properties": {
           "outputPath": {
             "type": "string",
@@ -22,13 +23,17 @@
           },
           "knownLeaflets": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "default": [],
             "description": "Leaflet keys (type|validFrom|validTo) already known to the caller."
           },
           "types": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "default": [],
             "description": "Case-insensitive leaflet type filter. Empty means all types."
           },
@@ -42,22 +47,222 @@
       "output": {
         "type": "object",
         "properties": {
-          "outputPath": { "type": "string" },
-          "count": { "type": "integer" },
-          "hasNew": { "type": "boolean" },
+          "outputPath": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "hasNew": {
+            "type": "boolean"
+          },
           "leaflets": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "type": { "type": "string" },
-                "from": { "type": "string", "format": "date" },
-                "to": { "type": "string", "format": "date" },
-                "url": { "type": "string", "format": "uri" }
+                "type": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                }
               }
             }
           },
-          "fileSize": { "type": "integer" }
+          "fileSize": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "spec": {
+      "description": "Return the config and output JSON schemas (Proc-protocol 1.1).",
+      "input": {
+        "type": "object",
+        "properties": {}
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "configSchema": {
+            "type": "object"
+          },
+          "outputSchema": {
+            "type": "object"
+          },
+          "protocol": {
+            "type": "string",
+            "const": "1.1"
+          }
+        }
+      }
+    },
+    "check": {
+      "description": "Test Source: fetch and parse the listing; ok when at least one leaflet is found.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "state": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "seen": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "pageUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "run": {
+      "description": "Detect new leaflets: items = leaflets not in state.seen (and of the requested types), state = seen keys.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "state": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "seen": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "pageUrl": {
+            "type": "string"
+          },
+          "knownLeaflets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Legacy compatibility: keys treated as already seen, in addition to state.seen."
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "required": [
+          "items",
+          "state",
+          "metrics",
+          "checks"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "url",
+                "meta"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "url": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "meta": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "validFrom",
+                    "validTo"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "validFrom": {
+                      "type": "string"
+                    },
+                    "validTo": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "state": {
+            "type": "object",
+            "required": [
+              "seen"
+            ],
+            "properties": {
+              "seen": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "leaflets": {
+                "type": "integer"
+              },
+              "newLeaflets": {
+                "type": "integer"
+              }
+            }
+          },
+          "checks": {
+            "type": "array"
+          }
         }
       }
     },
@@ -66,18 +271,21 @@
       "input": {
         "type": "object",
         "properties": {
-          "originalExecutionId": { "type": "string" }
+          "originalExecutionId": {
+            "type": "string"
+          }
         }
       },
       "output": {
         "type": "object",
         "properties": {
-          "cleaned": { "type": "boolean" }
+          "cleaned": {
+            "type": "boolean"
+          }
         }
       }
     }
   },
-
   "execution": {
     "timeout": 180,
     "memoryLimit": "256Mi",
