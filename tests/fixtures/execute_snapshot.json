@@ -1,0 +1,27 @@
+{
+  "result": {
+    "count": 1,
+    "hasNew": true,
+    "leaflets": [
+      {
+        "type": "BILLA Bonus leták",
+        "from": "2026-01-01",
+        "to": "2026-01-07",
+        "url": "https://letak.billa.sk/x/y/pdfs/22222222-2222-2222-2222-222222222222.pdf?a=b"
+      }
+    ]
+  },
+  "fileDoc": {
+    "types": null,
+    "hasNew": true,
+    "count": 1,
+    "leaflets": [
+      {
+        "type": "BILLA Bonus leták",
+        "from": "2026-01-01",
+        "to": "2026-01-07",
+        "url": "https://letak.billa.sk/x/y/pdfs/22222222-2222-2222-2222-222222222222.pdf?a=b"
+      }
+    ]
+  }
+}
