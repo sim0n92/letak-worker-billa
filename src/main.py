@@ -248,7 +248,7 @@ class BillaWorker(ProcessClass):
         wanted = {str(t).lower() for t in (input_data.get("types") or [])}
         state = dict(input_data.get("state") or {})
         state["seen"] = list(state.get("seen") or []) + list(input_data.get("knownLeaflets") or [])
-        return v11.build_run_result(found, wanted, state, billa.leaflet_key)
+        return v11.build_run_result(found, wanted, state, lambda it: billa.leaflet_key(it["type"], it["from"], it["to"]))
 
     def execute(self, input_data):
         output_path = input_data.get("outputPath")
